@@ -8,7 +8,7 @@ root_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_file_pa
 # sys.path에 루트 디렉토리 추가
 sys.path.append(root_directory)
 
-from flask import Flask, request
+from flask import Flask, request, render_template
 import threading
 import json
 from common import utils
@@ -17,20 +17,31 @@ from common.config import InterfaceAgentConfig as config
 from common.config import AnalysisAgentConfig
 from common.config import RoutineManagementAgentConfig
 
+from flask_socketio import SocketIO, emit
+from chat import build_chat, parse_agent_answer
+
 app = Flask(__name__)
+socketio = SocketIO(app)
 agent = None
+delimiter = config['delimiter']
+
+'''
+Communicate with User via SocketIO
+'''
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@socketio.on('chat')
+def handle_chat_message(message):
+    emit('chat', build_chat('user', message), broadcast=True) #broadcast user message
+    agent_answer = agent.chat(f"{delimiter}{message}{delimiter}") #ask to interface agent
+    emit('chat', build_chat('agent', agent_answer), broadcast=True, namespace='/') #broadcast agent message
 
 
-@app.route('/chat', methods=['POST'])
-def handle_user_message():
-    delimiter = "####"
-    message = request.json['message']
-    my_msg = agent.chat(f"{delimiter}message{delimiter}")
-    print(message)
-    # TODO: Add business logic
-    return my_msg
-
-
+'''
+Communicate with Agents via Message Broker Server
+'''
 def send_message(message, send_to):
     envelope = {
         "message": message,
@@ -79,4 +90,4 @@ if __name__ == '__main__':
     agent = Agent(config["name"], config["model"], None, config["sys_msg"])
     receiver_thread = threading.Thread(target=receive_messages)
     receiver_thread.start()
-    app.run(debug=True, port=config["port"])
+    socketio.run(app, debug=True, port=config["port"])
