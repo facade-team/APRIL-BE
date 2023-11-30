@@ -21,6 +21,9 @@ OPENAI_API_KEY=openai_api_key_입력
 4. RabbitMQ server 실행 (도커)
 ```bash
 docker run -it --rm --name rabbitmq -p 5672:5672 -p 15682:15672 rabbitmq:3.8-management
+
+# 아래는 백그라운드 실행
+docker run -d -it --rm --name rabbitmq -p 5672:5672 -p 15682:15672 rabbitmq:3.8-management
 ```
 
 4. Agent 서버 실행
