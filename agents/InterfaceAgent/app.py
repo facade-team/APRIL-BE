@@ -19,24 +19,78 @@ from common.config import RoutineManagementAgentConfig
 
 from flask_socketio import SocketIO, emit
 from chat import build_chat, parse_agent_answer
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 agent = None
 delimiter = config['delimiter']
 
+# other agents
+analysis_agent = AnalysisAgentConfig["name"]
+routine_management_agent = RoutineManagementAgentConfig["name"]
+
 '''
 Communicate with User via SocketIO
 '''
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html') # temp page for socketIO test
 
 @socketio.on('chat')
 def handle_chat_message(message):
     emit('chat', build_chat('user', message), broadcast=True) #broadcast user message
     agent_answer = agent.chat(f"{delimiter}{message}{delimiter}") #ask to interface agent
-    emit('chat', build_chat('agent', agent_answer), broadcast=True, namespace='/') #broadcast agent message
+    parsed_answer = json.loads(agent_answer)
+    category, requirements, answer = parsed_answer["category"], parsed_answer["requirements"], parsed_answer["answer"]
+    print(parsed_answer)
+    if category == "Execute IoT Routine":
+        routine_number = requirements["routine_number"]
+        when_to_execute_in_hours = requirements["when_to_execute_in_hours"]
+        ex_time = datetime.now() + timedelta(hours=when_to_execute_in_hours)
+        ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
+        # Routine-Management Agent에 modify 요청
+        # send_message(routine_management_agent, {
+        #     "category": "modify",
+        #     "body": {
+        #         "id": routine_number,
+        #         "time": ex_time
+        #     }
+        # })
+    elif category == "Modify IoT Routine":
+        routine_number = requirements["routine_number"]
+        new_time = requirements["time"]
+        new_hour, new_minute = map(int, new_time.split(":"))
+        ex_time = datetime.now().replace(hour=new_hour, minute=new_minute)
+        ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
+        # Routine-Management Agent에 modify 요청
+        # send_message(routine_management_agent, {
+        #     "category": "modify",
+        #     "body": {
+        #         "id": routine_number,
+        #         "time": ex_time
+        #     }
+        # })
+    elif category == "Operate IoT Devices":
+        device = requirements["device"]
+        operation = requirements["operation"]
+        # IoT 기기 조작 API 호출
+        print(device, operation)
+    elif category == "Search IoT Routine":
+        # Routine-Management Agent에게 search 요청
+        # send_message(routine_management_agent, {
+        #     "category": "search",
+        #     "body": {}
+        # })
+        pass
+    elif category == "General Query":
+        pass
+    else:
+        print("Error: Invalid Answer")
+        emit('chat', build_chat('agent', "오류가 발생했습니다."), broadcast=True, namespace='/') #broadcast agent message
+        return
+    emit('chat', build_chat('agent', answer), broadcast=True, namespace='/') #broadcast agent message
+    return
 
 
 '''
@@ -57,10 +111,6 @@ def send_message(message, send_to):
 def receive_messages():
     channel_name = agent.name
     channel = utils.create_channel(channel_name)
-
-    # other agents
-    analysis_agent = AnalysisAgentConfig["name"]
-    routine_management_agent = RoutineManagementAgentConfig["name"]
 
     def on_message_received(ch, method, properties, body):
         response = json.loads(body)
