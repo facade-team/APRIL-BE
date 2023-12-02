@@ -12,7 +12,8 @@ from flask import Flask, request
 import threading
 import json
 from common import utils
-from agents.agent import Agent
+from agents.AnalysisAgent.pagent import Agent
+from common.prompts.AnalysisAgentPrompt import pat_data
 from common.config import InterfaceAgentConfig
 from common.config import AnalysisAgentConfig as config
 from common.config import RoutineManagementAgentConfig
@@ -20,6 +21,11 @@ from common.config import RoutineManagementAgentConfig
 app = Flask(__name__)
 agent = None
 
+
+@app.route('/test', methods=['GET'])
+def test():
+    send_message("", config["name"])
+    return 'ok'
 
 def send_message(message, send_to):
     envelope = {
@@ -42,17 +48,20 @@ def receive_messages():
     interface_agent = InterfaceAgentConfig["name"]
 
     def on_message_received(ch, method, properties, body):
-        response = json.loads(body)
+        # response = json.loads(body)
         # TODO: Add business logic
         # Parse response (Who sent? In what format?)
         # Decide what to do next
-        if response["from"] == routine_management_agent:  # send message to routine management agent
-            my_msg = agent.chat(response["message"])
-            send_message(my_msg, routine_management_agent)
-        elif response["from"] == interface_agent:  # send message to interface agent
-            my_msg = agent.chat(response["message"])
-            send_message(my_msg, interface_agent)
-        return
+
+        for pdata in pat_data :
+            res = agent.chat(pdata["description"] + pdata["data"] + "2023-10-28" + " ??\n")
+            res_json = json.dumps({
+                "type" : pdata["type"],
+                "description" : pdata["description"],
+                "estimated_time" : res
+                })
+            print("Predict completed.\n" + res_json)
+            send_message("Predict completed.\n" + res_json, routine_management_agent)
 
     channel.basic_consume(queue=channel_name,
                           auto_ack=True,
