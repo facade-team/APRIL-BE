@@ -22,7 +22,7 @@ RoutineManagementAgentConfig = {
 AnalysisAgentConfig = {
     "port": 5003,
     "name": "AnalysisAgent",
-    "model": "gpt-3.5-turbo",
+    "model": "gpt-4-1106-preview",
     "sys_msg": AnalysisAgentPrompt.system_message,
     "delimiter": AnalysisAgentPrompt.delimiter
 }
