@@ -79,9 +79,9 @@ class Agent:
                         self.print_d("---------------------OUTPUT-------------------------\n")
                         for rs_output in toolcall.code_interpreter.outputs :
                             if rs_output.type == "logs" :
-                                self.print_d(rs_output.logs)
+                                self.print_d(rs_output.logs+'\n')
                             elif rs_output.type == "image" :
-                                self.print_d("IMAGE")
+                                self.print_d("IMAGE\n")
                             #   image_data = client.files.content(rs_output.image.file_id)
                             #   image_data_bytes = image_data.read()
                             #   with open(f"./c_{i}.png", "wb") as file:
