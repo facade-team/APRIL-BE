@@ -5,7 +5,7 @@ The customer query will be delimited with \
 {delimiter} characters.
 You should analyze the user's query and extract categories and requirements.
 
-Output a python list of objects, where each object has \
+Output a python object, where object has \
 the following format:
     'category': <one of Execute IoT Routine, \
     Modify IoT Routine, \
@@ -48,8 +48,15 @@ In the IoT devices operation query, the query is made in the following format.
     - ex2. 블라인드 절반만 올려줘.
     - ex3. 램프 켜.
 The requirement should be answered in the form of an object as follows.
-    'device': <device to operate>,
-    'operation': <one of on, off>  
+    'device': <device to operate. One of TV, Lamp, Air conditioner, Blind>,
+    'operation': <python object in a specific format as below(operation object format)>
+
+operation object format:
+    "power": <one of "on", "off">
+OR
+    "level": <an integer between 0 and 100>
+OR
+    "temp": <a float number>
 
 General query:
 In the General query, General Query means all queries that do not correspond to the three categories above. \
