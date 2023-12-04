@@ -11,14 +11,12 @@ sys.path.append(root_directory)
 import json
 import threading
 
-from flask import Flask, request
+from flask import Flask
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 
 from agents.agent import Agent
-from agents.RoutineManagementAgent import routine_controller
+from agents.RoutineManagementAgent import routine_controller, routine_service
 from agents.RoutineManagementAgent.models import *
-from agents.RoutineManagementAgent.routine_service import *
 from common import utils
 from common.config import AnalysisAgentConfig, InterfaceAgentConfig
 from common.config import RoutineManagementAgentConfig as config
@@ -37,8 +35,8 @@ db.init_app(app)
 migrate.init_app(app, db)
 
 
-def send_message(message, send_to):
-    envelope = {"message": message, "from": agent.name, "to": send_to}
+def send_message(message, msg_from, send_to):
+    envelope = {"message": message, "from": msg_from, "to": send_to}
     channel = utils.create_channel(send_to)
     channel.basic_publish(exchange="", routing_key=send_to, body=json.dumps(envelope))
 
@@ -64,11 +62,11 @@ def receive_messages():
             "Predict completed" in response["message"]
         ):
             routine_list = agent.chat(response["message"])
-            save_routine(routine_list)
+            routine_service.save_routine(routine_list)
 
         elif response["from"] == interface_agent:  # send message to interface agent
             my_msg = agent.chat(response["message"])
-            send_message(my_msg, interface_agent)
+            # send_message(my_msg, interface_agent)
         return
 
     channel.basic_consume(
@@ -88,6 +86,8 @@ if __name__ == "__main__":
 
     with app.app_context():
         db.create_all()
+
+    routine_service.routine_scheduler.start()
 
     app.run(debug=True, port=config["port"])
 
