@@ -11,6 +11,7 @@ sys.path.append(root_directory)
 from flask import Flask, request, render_template
 import threading
 import json
+import requests
 from common import utils
 from agents.agent import Agent
 from common.config import InterfaceAgentConfig as config
@@ -20,6 +21,7 @@ from common.config import RoutineManagementAgentConfig
 from flask_socketio import SocketIO, emit
 from chat import build_chat, parse_agent_answer
 from datetime import datetime, timedelta
+from common.config import SMART_HOME_API_BASE
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -50,13 +52,13 @@ def handle_chat_message(message):
         ex_time = datetime.now() + timedelta(hours=when_to_execute_in_hours)
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
-        # send_message(routine_management_agent, {
-        #     "category": "modify",
-        #     "body": {
-        #         "id": routine_number,
-        #         "time": ex_time
-        #     }
-        # })
+        send_message({
+            "category": "modify",
+            "body": {
+                "id": routine_number,
+                "time": ex_time
+            }
+        }, routine_management_agent)
     elif category == "Modify IoT Routine":
         routine_number = requirements["routine_number"]
         new_time = requirements["time"]
@@ -64,25 +66,26 @@ def handle_chat_message(message):
         ex_time = datetime.now().replace(hour=new_hour, minute=new_minute)
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
-        # send_message(routine_management_agent, {
-        #     "category": "modify",
-        #     "body": {
-        #         "id": routine_number,
-        #         "time": ex_time
-        #     }
-        # })
+        send_message({
+            "category": "modify",
+            "body": {
+                "id": routine_number,
+                "time": ex_time
+            }
+        }, routine_management_agent)
     elif category == "Operate IoT Devices":
         device = requirements["device"]
         operation = requirements["operation"]
-        # IoT 기기 조작 API 호출
-        print(device, operation)
+        data = {'type': device, 'operation': operation}
+        headers = {'Content-Type': 'application/json'}
+        r = requests.post(SMART_HOME_API_BASE+'/device', data=json.dumps(data), headers=headers)
+        print(r.text)
     elif category == "Search IoT Routine":
         # Routine-Management Agent에게 search 요청
-        # send_message(routine_management_agent, {
-        #     "category": "search",
-        #     "body": {}
-        # })
-        pass
+        send_message({
+            "category": "search",
+            "body": {}
+        }, routine_management_agent)
     elif category == "General Query":
         pass
     else:
@@ -114,18 +117,12 @@ def receive_messages():
 
     def on_message_received(ch, method, properties, body):
         response = json.loads(body)
-        # TODO: Add business logic
-        # Parse response (Who sent? In what format?)
-        # Decide what to do next
         if response["from"] == analysis_agent:  # send message to analysis agent
-            my_msg = agent.chat(response["message"])
-            send_message(my_msg, analysis_agent)
+            #my_msg = agent.chat(response["message"])
+            #send_message(my_msg, analysis_agent)
+            pass
         elif response["from"] == routine_management_agent:  # send message to routine managent agent
-            print(response["message"])
-            print()
-            my_msg = agent.chat(response["message"])
-            print(my_msg)
-            send_message(my_msg, routine_management_agent)
+            pass
         return
 
     channel.basic_consume(queue=channel_name,
