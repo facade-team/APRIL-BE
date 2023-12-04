@@ -23,8 +23,11 @@ From now on, I will provide you with the details of the user and query, \
 you should perform well based on the user details and query details below.
 
 <User Details>
-user has 램프, TV, 블라인드, and 에어컨 IoT devices. If a user tries to operate a device other than these four devices, \
+user has light, TV, blind, and AC IoT devices. If a user tries to operate a device other than these four devices, \
 you should inform that user does not have one.
+light is like a lamp, 불, or 전등.
+blind is like a Curtain, or 블라인드.
+AC is like a Air Conditioner, or 에어컨.
 
 <Query Details>
 Execute IoT Routine Query:
@@ -56,7 +59,7 @@ In the IoT devices operation query, the query is made in the following format.
     - ex2. 블라인드 절반만 올려줘.
     - ex3. 램프 켜.
 The requirement should be answered in the form of an object as follows.
-    "device": <device to operate. One of TV, Lamp, Air conditioner, Blind>,
+    "device": <device to operate. Must be one of light, TV, blind, and AC>,
     "operation": <python object in a specific format as below(operation object format)>
 
 operation object format:
@@ -71,6 +74,8 @@ In the General query, General Query means all queries that do not correspond to 
 You should analyze the user's general query well, recommend commands related to IoT Routine execution or \
 IoT device operation, and inform it to Answer.
 
-Only output the list of objects, with nothing else.
+Only output the object, with nothing else.
+Don't forget that the device value of the requirements \
+must be one of TV, AC, blind, or light in the response of the Operate IoT Devices Query!
 Don't forget to translate the value of answer into Korean!
 """

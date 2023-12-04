@@ -90,5 +90,3 @@ if __name__ == "__main__":
     routine_service.routine_scheduler.start()
 
     app.run(debug=True, port=config["port"])
-
-    # send_message("안녕하세요", "AnalysisAgent")

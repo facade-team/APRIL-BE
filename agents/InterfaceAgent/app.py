@@ -12,13 +12,14 @@ import json
 import threading
 from datetime import datetime, timedelta
 
+import requests
 from chat import build_chat, parse_agent_answer
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 
 from agents.agent import Agent
 from common import utils
-from common.config import AnalysisAgentConfig
+from common.config import SMART_HOME_API_BASE, AnalysisAgentConfig
 from common.config import InterfaceAgentConfig as config
 from common.config import RoutineManagementAgentConfig
 
@@ -60,13 +61,10 @@ def handle_chat_message(message):
         ex_time = datetime.now() + timedelta(hours=when_to_execute_in_hours)
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
-        # send_message(routine_management_agent, {
-        #     "category": "modify",
-        #     "body": {
-        #         "id": routine_number,
-        #         "time": ex_time
-        #     }
-        # })
+        send_message(
+            {"category": "modify", "body": {"id": routine_number, "time": ex_time}},
+            routine_management_agent,
+        )
     elif category == "Modify IoT Routine":
         routine_number = requirements["routine_number"]
         new_time = requirements["time"]
@@ -74,25 +72,22 @@ def handle_chat_message(message):
         ex_time = datetime.now().replace(hour=new_hour, minute=new_minute)
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
-        # send_message(routine_management_agent, {
-        #     "category": "modify",
-        #     "body": {
-        #         "id": routine_number,
-        #         "time": ex_time
-        #     }
-        # })
+        send_message(
+            {"category": "modify", "body": {"id": routine_number, "time": ex_time}},
+            routine_management_agent,
+        )
     elif category == "Operate IoT Devices":
         device = requirements["device"]
         operation = requirements["operation"]
-        # IoT 기기 조작 API 호출
-        print(device, operation)
+        data = {"type": device, "operation": operation}
+        headers = {"Content-Type": "application/json"}
+        r = requests.post(
+            SMART_HOME_API_BASE + "/device", data=json.dumps(data), headers=headers
+        )
+        print(r.text)
     elif category == "Search IoT Routine":
         # Routine-Management Agent에게 search 요청
-        # send_message(routine_management_agent, {
-        #     "category": "search",
-        #     "body": {}
-        # })
-        pass
+        send_message({"category": "search", "body": {}}, routine_management_agent)
     elif category == "General Query":
         pass
     else:
