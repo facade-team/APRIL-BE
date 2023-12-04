@@ -7,10 +7,12 @@ app = Flask(__name__)
 ####################
 devices = {
     "TV": {
-        "power": "off"
+        "power": "off",
+        "level": None,
     },
     "light": {
-        "power": "off"
+        "power": "off",
+        "level": None,
     },
     "AC": {
         "power": "off",

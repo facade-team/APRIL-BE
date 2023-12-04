@@ -26,3 +26,6 @@ AnalysisAgentConfig = {
     "sys_msg": AnalysisAgentPrompt.system_message,
     "delimiter": AnalysisAgentPrompt.delimiter
 }
+
+# Smart Home IoT API
+SMART_HOME_API_BASE = "http://127.0.0.1:5555"
