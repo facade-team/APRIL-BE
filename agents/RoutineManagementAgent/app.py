@@ -58,9 +58,7 @@ def receive_messages():
         # Decide what to do next
 
         # 1. 패턴분석 완료 => 루틴생성 + 스케쥴러 등록
-        if (response["from"] == analysis_agent) and (
-            "Predict completed" in response["message"]
-        ):
+        if response["from"] == analysis_agent:
             routine_list = agent.chat(response["message"])
             routine_service.save_routine(routine_list)
 

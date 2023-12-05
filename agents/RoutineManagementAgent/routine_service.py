@@ -1,4 +1,5 @@
 import heapq
+import json
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -26,15 +27,21 @@ def scheduled_job():
 # routine 을 message queue 에 보내는 함수
 def send_routine_to_MQ():
     execution_time, routine_id, routineList = heapq.heappop(routine_heap)
-    msg = f"""Executing routine \
-        {{
-            \"execute_time\": \"{execution_time}\",
-            \"id\": {routine_id},
-            \"routineList\": {routineList}
-        }}
-        """
-    print(msg)
-    send_message(msg, "RoutineManagementAgent", "InterfaceAgent")  # mq 에 보내기
+
+    execution_time = execution_time.strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+    dict_data = {
+        "category": "routine",
+        "body": {
+            "id": routine_id,
+            "routineList": routineList,
+            "execute_time": execution_time,
+        },
+    }
+
+    json_data = json.dumps(dict_data)
+    # print(json_data)
+    send_message(json_data, "RoutineManagementAgent", "InterfaceAgent")  # mq 에 보내기
 
 
 # Function to add routine to the heap
