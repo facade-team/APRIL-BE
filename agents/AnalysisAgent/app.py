@@ -53,15 +53,19 @@ def receive_messages():
         # Parse response (Who sent? In what format?)
         # Decide what to do next
 
+        res_send = ""
         for pdata in pat_data :
-            res = agent.chat(pdata["description"] + pdata["data"] + "2023-10-28" + " ??\n")
-            res_json = json.dumps({
-                "type" : pdata["type"],
-                "description" : pdata["description"],
-                "estimated_time" : res
-                })
-            print("Predict completed.\n" + res_json)
-            send_message("Predict completed.\n" + res_json, routine_management_agent)
+            pdata = pat_data[3]
+            res = agent.chat(pdata["description"] + pdata["data"])
+            res_send += res
+            # res_json = json.dumps({
+            #     "type" : pdata["type"],
+            #     "description" : pdata["description"],
+            #     "estimated_time" : res
+            #     })
+            print("Predict completed.\n" + res)
+            break
+        send_message("Predict completed.\n" + res_send, routine_management_agent)
 
     channel.basic_consume(queue=channel_name,
                           auto_ack=True,

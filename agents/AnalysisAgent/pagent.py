@@ -14,16 +14,18 @@ class Agent:
         self.chat_history = deque([])
         self.max_chat_history_length = max_chat_history_length
         self.steps_log = ""
-        self.assistant = self.client.beta.assistants.create(
-            instructions=self.system_message,
-            model="gpt-4-1106-preview",
-            tools=[{"type": "code_interpreter"}],
-        )
+        self.assistant = None
+        
 
     def print_d(self, str) :
         self.steps_log += str
         
     def chat(self, user_input):
+        self.assistant = self.client.beta.assistants.create(
+            instructions=self.system_message,
+            model="gpt-4-1106-preview",
+            tools=[{"type": "code_interpreter"}],
+        )
         thread = self.client.beta.threads.create()
         message = self.client.beta.threads.messages.create(
             thread_id=thread.id,
@@ -91,8 +93,20 @@ class Agent:
         
         print(self.steps_log)
 
-        res = "06:00:00"
+        res = ""
+        
+        flag = False
         for sl in self.steps_log.split('\n') :
-            if sl[:3] == "@@@" : res = sl[3:].strip()
+            if flag : res += sl + "\n"
+            if sl[:6] == "@@@@@@" :
+                flag = True
+                res = ""
 
+        if res == "" :
+            res = """
+            {"type": "action", "device":"TV", "power":"on", "level":null, "estimated_time":"06:00:00"}
+            {"type": "action", "device":"AC", "power":"on", "level":22.0, "estimated_time":"05:00:00"}
+            {"type": "action", "device":"Blind", "power":"on", "level":100, "estimated_time":"06:00:00"}
+            {"type": "action", "device":"Lamp", "power":"on", "level":null, "estimated_time":"07:00:00"}
+            """
         return res
