@@ -33,6 +33,21 @@ analysis_agent = AnalysisAgentConfig["name"]
 routine_management_agent = RoutineManagementAgentConfig["name"]
 
 """
+IoT
+"""
+def parse_device_name(target):
+    if target in ["light", "Light", "lamp", "Lamp"]: # light
+        return "light"
+    elif target in ["TV", "tv"]: # TV
+        return "TV"
+    elif target in ["blind", "Blind"]: # blind
+        return "blind"
+    elif target in ["AC", "ac", "Air conditioner", "Air Conditioner", "air conditioner"]: # AC
+        return "AC"
+    else:
+        return ""
+
+"""
 Communicate with User via SocketIO
 """
 
@@ -77,7 +92,9 @@ def handle_chat_message(message):
             routine_management_agent,
         )
     elif category == "Operate IoT Devices":
-        device = requirements["device"]
+        device = parse_device_name(requirements["device"])
+        if device == "":
+            print("Error! Unsupported Device") # TODO : 예외 처리
         operation = requirements["operation"]
         data = {"type": device, "operation": operation}
         headers = {"Content-Type": "application/json"}
@@ -119,21 +136,37 @@ def receive_messages():
 
     def on_message_received(ch, method, properties, body):
         response = json.loads(body)
-        print("received message : ", response)
-        # TODO: Add business logic
-        # Parse response (Who sent? In what format?)
-        # Decide what to do next
         if response["from"] == analysis_agent:  # send message to analysis agent
-            my_msg = agent.chat(response["message"])
-            send_message(my_msg, analysis_agent)
+            # my_msg = agent.chat(response["message"])
+            # send_message(my_msg, analysis_agent)
+            pass
         elif (
             response["from"] == routine_management_agent
         ):  # send message to routine managent agent
-            print(response["message"])
-            print()
-            my_msg = agent.chat(response["message"])
-            print(my_msg)
-            send_message(my_msg, routine_management_agent)
+            message = response["message"]
+            if message["category"] == "routine":
+                # 루틴 실행
+                routine_list = message["body"]["routineList"]
+                headers = {"Content-Type": "application/json"}
+                body = []
+                for op in routine_list:
+                    dev_name = parse_device_name(parse_device_nameop["device"])
+                    if dev_name == "":
+                        print("Error! Unsupported Device") # TODO : 예외 처리
+                    body.append({
+                        "type": dev_name,
+                        "operation": {
+                            "power": op["power"],
+                            "level": op["level"]
+                        }
+                    })
+                r = requests.post(
+                    SMART_HOME_API_BASE + "/devices", data=json.dumps(data), headers=headers
+                )
+                print(r.text)
+            else:
+                # 결과 유저에게 전달
+                pass
         return
 
     channel.basic_consume(
