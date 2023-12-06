@@ -34,3 +34,21 @@ def get_routine():
     response = {"message": "Routine send successfully"}
 
     return response
+
+
+# "ymd" = "20221222" 형식으로 넘어오는 쿼리파라미터
+@bp.route("/get-routine-by-date", methods=["GET"])
+def get_routine_by_date():
+    ymd = request.args.get("ymd")
+
+    routine_list = routine_service.read_routine_by_ymd(ymd)
+
+    return routine_list
+
+
+# 루틴의 서로 다른 ymd 리스트를 조회
+@bp.route("/get-routine-ymd-list", methods=["GET"])
+def get_routine_ymd_list():
+    ymd_list = routine_service.read_routine_ymd_list()
+
+    return ymd_list

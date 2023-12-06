@@ -65,7 +65,10 @@ def handle_chat_message(message):
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
         send_message(
-            {"category": "modify", "body": {"routine_id": routine_number, "execute_time": ex_time}},
+            {
+                "category": "modify",
+                "body": {"routine_id": routine_number, "execute_time": ex_time},
+            },
             routine_management_agent,
         )
     elif category == "Modify IoT Routine":
@@ -76,7 +79,10 @@ def handle_chat_message(message):
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
         send_message(
-            {"category": "modify", "body": {"routine_id": routine_number, "execute_time": ex_time}},
+            {
+                "category": "modify",
+                "body": {"routine_id": routine_number, "execute_time": ex_time},
+            },
             routine_management_agent,
         )
     elif category == "Operate IoT Devices":
