@@ -15,6 +15,7 @@ from agents.agent import Agent
 from common.config import InterfaceAgentConfig as config
 from common.config import AnalysisAgentConfig
 from common.config import RoutineManagementAgentConfig
+from common.config import SMART_HOME_API_BASE, AnalysisAgentConfig
 
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -23,15 +24,11 @@ import threading
 from datetime import datetime, timedelta
 
 import requests
-from chat import build_chat, parse_agent_answer
 from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit
 
-from agents.agent import Agent
-from common import utils
-from common.config import SMART_HOME_API_BASE, AnalysisAgentConfig
-from common.config import InterfaceAgentConfig as config
-from common.config import RoutineManagementAgentConfig
+
+
+
 
 app = Flask(__name__)
 CORS(app)
@@ -111,8 +108,7 @@ def handle_chat_message(message):
         "chat", build_chat("agent", answer), broadcast=True, namespace="/"
     )  # broadcast agent message
     return
-
-
+    
 """
 Communicate with Agents via Message Broker Server
 """
