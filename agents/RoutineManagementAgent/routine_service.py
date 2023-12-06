@@ -128,3 +128,24 @@ def read_routines():
     result = routine_schema.dump(routines_with_devices)
 
     return result
+
+
+def update_routine_by_id(routine_id, execute_time):
+    # routine_id 에 해당하는 routine 의 execute_time 을 update
+
+    try:
+        routine = Routine.query.get(routine_id)
+        routine.routine_time = execute_time
+        db.session.commit()
+
+        # schedule 에 있는 루틴 정보도 수정하고 heap 을 재정렬
+        for i in range(len(routine_heap)):
+            if routine_heap[i][1] == routine_id:
+                routine_heap[i] = (execute_time, routine_id, routine_heap[i][2])
+                heapq.heapify(routine_heap)
+                break
+
+        return True
+    except Exception as e:
+        print(e)
+        return False

@@ -1,14 +1,22 @@
 """
 IoT
 """
+
+
 def parse_device_name(target):
-    if target in ["light", "Light", "lamp", "Lamp"]: # light
+    if target in ["light", "Light", "lamp", "Lamp"]:  # light
         return "light"
-    elif target in ["TV", "tv"]: # TV
+    elif target in ["TV", "tv"]:  # TV
         return "TV"
-    elif target in ["blind", "Blind"]: # blind
+    elif target in ["blind", "Blind"]:  # blind
         return "blind"
-    elif target in ["AC", "ac", "Air conditioner", "Air Conditioner", "air conditioner"]: # AC
+    elif target in [
+        "AC",
+        "ac",
+        "Air conditioner",
+        "Air Conditioner",
+        "air conditioner",
+    ]:  # AC
         return "AC"
     else:
         return ""
@@ -36,9 +44,8 @@ def routine_answer_template(routine_id, ex_time, operation_list):
 def build_routine_list_answer(body):
     answer = ""
     for routine in body:
-        routine_id = routine["id"] # 루틴 번호
-        ex_time = routine["execute_time"] # 실행 시간
-        operation_list = routine["routineList"] # 루틴을 구성하는 기기 조작 명령들
+        routine_id = routine["routine_id"]  # 루틴 번호
+        ex_time = routine["execute_time"]  # 실행 시간
+        operation_list = routine["routine_list"]  # 루틴을 구성하는 기기 조작 명령들
         answer += routine_answer_template(routine_id, ex_time, operation_list)
     return answer
-
