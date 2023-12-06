@@ -76,4 +76,4 @@ if __name__ == "__main__":
     agent = Agent(config["name"], config["model"], None, config["sys_msg"])
     receiver_thread = threading.Thread(target=receive_messages)
     receiver_thread.start()
-    app.run(debug=True, port=config["port"])
+    app.run(debug=False, port=config["port"])
