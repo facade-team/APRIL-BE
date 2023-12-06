@@ -13,6 +13,7 @@ import threading
 
 from flask import Flask
 from flask_migrate import Migrate
+from flask_cors import CORS
 
 from agents.agent import Agent
 from agents.RoutineManagementAgent import routine_controller, routine_service
@@ -23,6 +24,7 @@ from common.config import RoutineManagementAgentConfig as config
 from common.database import DB_URL
 
 app = Flask(__name__)
+CORS(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
 app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] = True
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
