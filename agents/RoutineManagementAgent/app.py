@@ -65,23 +65,27 @@ def receive_messages():
         elif response["from"] == interface_agent:  # send message to interface agent
             # 루틴 목록 조회
 
-            res_msg = json.loads(response["message"])
+            # res_msg = json.loads(response["message"])
+            res_msg = response["message"]
 
-            if res_msg["category"] == "search":
-                # 루틴 목록 조회 쿼리
-                routine_list = routine_service.get_routine_list()
+            with app.app_context():
+                if res_msg["category"] == "search":
+                    # 루틴 목록 조회 쿼리
+                    routine_list = routine_service.read_routines()
 
-                # 루틴 목록 조회 결과 전송
-                routine_service.send_routine_list_to_MQ(routine_list)
+                    # 루틴 목록 조회 결과 전송
+                    routine_service.send_routine_list_to_MQ(routine_list)
 
-            elif res_msg["category"] == "modify":
-                # res_msg["body"] => {"routine_id": 1, "execute_time": "2021-06-01T00:00:00.000Z"}
+                elif res_msg["category"] == "modify":
+                    # res_msg["body"] => {"routine_id": 1, "execute_time": "2021-06-01T00:00:00.000Z"}
 
-                # res_msg["body"] json 형태로 변환
-                body = json.loads(res_msg["body"])
+                    # res_msg["body"] json 형태로 변환
+                    body = json.loads(res_msg["body"])
 
-                # DB에 루틴 수정 쿼리 날리기
-                routine_service.modify_routine(body["routine_id"], body["execute_time"])
+                    # DB에 루틴 수정 쿼리 날리기
+                    routine_service.modify_routine(
+                        body["routine_id"], body["execute_time"]
+                    )
 
         return
 
