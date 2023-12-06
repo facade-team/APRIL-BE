@@ -38,7 +38,7 @@ def build_routine_list_answer(body):
     for routine in body:
         routine_id = routine["id"] # 루틴 번호
         ex_time = routine["execute_time"] # 실행 시간
-        operation_list = routine["routineList"] # 루틴을 구성하는 기기 조작 명령들
+        operation_list = routine["routine_list"] # 루틴을 구성하는 기기 조작 명령들
         answer += routine_answer_template(routine_id, ex_time, operation_list)
     return answer
 

@@ -73,7 +73,7 @@ def handle_chat_message(message):
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
         send_message(
-            {"category": "modify", "body": {"id": routine_number, "time": ex_time}},
+            {"category": "modify", "body": {"routine_id": routine_number, "execute_time": ex_time}},
             routine_management_agent,
         )
     elif category == "Modify IoT Routine":
@@ -84,7 +84,7 @@ def handle_chat_message(message):
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
         send_message(
-            {"category": "modify", "body": {"id": routine_number, "time": ex_time}},
+            {"category": "modify", "body": {"routine_id": routine_number, "execute_time": ex_time}},
             routine_management_agent,
         )
     elif category == "Operate IoT Devices":
@@ -140,7 +140,7 @@ def receive_messages():
             message = json.loads(response["message"])
             if message["category"] == "routine":
                 # 루틴 실행
-                routine_list = message["body"]["routineList"]
+                routine_list = message["body"]["routine_list"]
                 headers = {"Content-Type": "application/json"}
                 body = []
                 for op in routine_list:
