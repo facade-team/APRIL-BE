@@ -1,22 +1,22 @@
 from flask import Flask, request
+import RPi.GPIO as GPIO
+import gpio_control as GC
 from flask_cors import CORS
 
-
 app = Flask(__name__)
-CORS(app, resources={r'/*': {'origins': '*'}})
-
+CORS(app)
 
 ####################
-#    Mocking IoT   #
+#    IoT Devices   #
 ####################
 devices = {
     "TV": {
         "power": "off",
-        "level": None,
+        "level": None
     },
     "light": {
         "power": "off",
-        "level": None,
+        "level": None
     },
     "AC": {
         "power": "off",
@@ -27,7 +27,7 @@ devices = {
         "level": 100
     }
 }
-
+GC.GPIO_INIT()
 ####################
 
 def success_response(message):
@@ -41,10 +41,65 @@ def fail_response(message):
         "state": "fail",
         "message": message
     }
+def set_AC (val):
+    print("In set_AC [%s]"%val)
+    try:
+        val = float(val)
+    except ValueError:
+        val = 18.0
+    if val < 18.0 : val = 18.0
+    elif val > 22.0 : val = 22.0
+    devices["AC"]["level"] = val
+    if devices["AC"]["power"] == "on" :
+        if val <= 19.0 : GC.GPIO_SET("AC", 1)
+        elif val <= 20.0 : GC.GPIO_SET("AC", 2)
+        elif val <= 21.0 : GC.GPIO_SET("AC", 3)
+        else : GC.GPIO_SET("AC", 4)
+    else : GC.GPIO_SET("AC", 0)
+def set_blind (val):
+    print("In set_blind [%s]"%val)
+    try:
+        val = int(val)
+    except ValueError:
+        val = 0
+    if val < 0 : val = 0
+    elif val > 100 : val = 100
+    devices["blind"]["level"] = val
+    if devices["blind"]["power"] == "on" :
+        if val <= 25 : GC.GPIO_SET("blind", 1)
+        elif val <= 50 : GC.GPIO_SET("blind", 2)
+        elif val <= 75 : GC.GPIO_SET("blind", 3)
+        else : GC.GPIO_SET("blind", 4)
+    else : GC.GPIO_SET("blind", 0)
+
+def do_operate_GPIO(dtype, oper, value):
+    if dtype == "TV" and oper == "power" :
+        devices[dtype][oper] = value
+        if value == "on" : GC.GPIO_SET(dtype, 1)
+        else : GC.GPIO_SET(dtype, 0)
+    elif dtype == "light" and oper == "power" :
+        devices[dtype][oper] = value
+        if value == "on" : GC.GPIO_SET(dtype, 1)
+        else : GC.GPIO_SET(dtype, 0)
+    
+    elif dtype == "AC" and oper == "power" :
+        devices[dtype][oper] = value
+        if value == "on" : set_AC(devices[dtype]["level"])
+        else : GC.GPIO_SET(dtype, 0)
+    elif dtype == "AC" and oper == "level" :
+        set_AC(value)
+
+    elif dtype == "blind" and oper == "power" :
+        devices[dtype][oper] = value
+        if value == "on" : set_blind(devices[dtype]["level"])
+        else : GC.GPIO_SET(dtype, 0)
+    elif dtype == "blind" and oper == "level" :
+        set_blind(value)
+
 def operate(type, operation, keys):
     try:
         for k in keys:
-            devices[type][k] = operation[k]
+            do_operate_GPIO(type, k, operation[k])
         return True
     except KeyError:
         return False
@@ -88,4 +143,4 @@ def operate_device():
         return fail_response(f"Fail to handle: {body}")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5555)
+    app.run(host="0.0.0.0", debug=False, port=5555)
