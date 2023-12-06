@@ -80,10 +80,11 @@ def receive_messages():
                     # res_msg["body"] => {"routine_id": 1, "execute_time": "2021-06-01T00:00:00.000Z"}
 
                     # res_msg["body"] json 형태로 변환
-                    body = json.loads(res_msg["body"])
+                    # body = json.loads(res_msg["body"])
+                    body = res_msg["body"]
 
                     # DB에 루틴 수정 쿼리 날리기
-                    routine_service.modify_routine(
+                    routine_service.update_routine_by_id(
                         body["routine_id"], body["execute_time"]
                     )
 
@@ -107,6 +108,8 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-    routine_service.routine_scheduler.start()
+        routine_service.routine_scheduler.start()
 
-    app.run(debug=True, port=config["port"])
+        routine_service.init_routine_scheduler()
+
+    app.run(debug=False, port=config["port"])
