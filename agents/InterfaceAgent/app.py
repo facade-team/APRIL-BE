@@ -186,4 +186,4 @@ if __name__ == "__main__":
     # receiver_thread = threading.Thread(target=receive_messages)
     # receiver_thread.start()
     socketio.start_background_task(target=receive_messages)
-    socketio.run(app, debug=True, port=config["port"])
+    socketio.run(app, debug=False, port=config["port"])
