@@ -25,11 +25,14 @@ from common.config import SMART_HOME_API_BASE, AnalysisAgentConfig
 from common.config import InterfaceAgentConfig as config
 from common.config import RoutineManagementAgentConfig
 
+import pika
+
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 agent = None
 delimiter = config["delimiter"]
+lock = threading.Lock()
 
 # other agents
 analysis_agent = AnalysisAgentConfig["name"]
@@ -44,9 +47,17 @@ Communicate with User via SocketIO
 def index():
     return render_template("index.html")  # temp page for socketIO test
 
+@app.route("/test", methods=['GET'])
+def test():
+    print("OK")
+    send_message("tmp", "InterfaceAgent")
+    return "ok"
 
 @socketio.on("chat")
 def handle_chat_message(message):
+    current_thread_id = threading.get_ident()
+    print("*****현재 스레드의 ID:", current_thread_id)
+    lock.acquire()
     emit("chat", build_chat("user", message), broadcast=True)  # broadcast user message
     agent_answer = agent.chat(
         f"{delimiter}{message}{delimiter}"
@@ -65,10 +76,7 @@ def handle_chat_message(message):
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
         send_message(
-            {
-                "category": "modify",
-                "body": {"routine_id": routine_number, "execute_time": ex_time},
-            },
+            {"category": "modify", "body": {"routine_id": routine_number, "execute_time": ex_time}},
             routine_management_agent,
         )
     elif category == "Modify IoT Routine":
@@ -79,10 +87,7 @@ def handle_chat_message(message):
         ex_time = ex_time.strftime("%Y-%m-%d %H:%M")
         # Routine-Management Agent에 modify 요청
         send_message(
-            {
-                "category": "modify",
-                "body": {"routine_id": routine_number, "execute_time": ex_time},
-            },
+            {"category": "modify", "body": {"routine_id": routine_number, "execute_time": ex_time}},
             routine_management_agent,
         )
     elif category == "Operate IoT Devices":
@@ -113,6 +118,7 @@ def handle_chat_message(message):
     emit(
         "chat", build_chat("agent", answer), broadcast=True, namespace="/"
     )  # broadcast agent message
+    lock.release()
     return
 
 
@@ -128,55 +134,62 @@ def send_message(message, send_to):
 
 
 def receive_messages():
+    current_thread_id = threading.get_ident()
+    print("*****현재 스레드의 ID:", current_thread_id)
+
     channel_name = agent.name
     channel = utils.create_channel(channel_name)
 
     def on_message_received(ch, method, properties, body):
-        with app.app_context():
-            response = json.loads(body)
-            if response["from"] == analysis_agent:  # send message to analysis agent
-                pass
-            elif (
-                response["from"] == routine_management_agent
-            ):  # send message to routine managent agent
-                message = json.loads(response["message"])
-                if message["category"] == "routine":
-                    # 루틴 실행
-                    routine_list = message["body"]["routine_list"]
-                    headers = {"Content-Type": "application/json"}
-                    body = []
-                    for op in routine_list:
-                        dev_name = parse_device_name(op["device"])
-                        if dev_name == "":
-                            print("Error! Unsupported Device")  # TODO : 예외 처리
-                        body.append(
-                            {
-                                "type": dev_name,
-                                "operation": {
-                                    "power": op["power"],
-                                    "level": op["level"],
-                                },
-                            }
-                        )
-                    r = requests.post(
-                        SMART_HOME_API_BASE + "/devices",
-                        data=json.dumps(body),
-                        headers=headers,
+        current_thread_id = threading.get_ident()
+        print("현재 스레드의 ID:", current_thread_id)
+        lock.acquire()
+        response = json.loads(body)
+        print(f"RECEIVED: {response}")
+        if response["from"] == analysis_agent:  # send message to analysis agent
+            pass
+        elif (
+            response["from"] == routine_management_agent
+        ):  # send message to routine managent agent
+            message = json.loads(response["message"])
+            if message["category"] == "routine":
+                # 루틴 실행
+                routine_list = message["body"]["routine_list"]
+                headers = {"Content-Type": "application/json"}
+                body = []
+                for op in routine_list:
+                    dev_name = parse_device_name(op["device"])
+                    if dev_name == "":
+                        print("Error! Unsupported Device")  # TODO : 예외 처리
+                    body.append(
+                        {
+                            "type": dev_name,
+                            "operation": {
+                                "power": op["power"],
+                                "level": op["level"],
+                            },
+                        }
                     )
-                    print(r.text)
-                else:
-                    # 결과 유저에게 전달
+                r = requests.post(
+                    SMART_HOME_API_BASE + "/devices",
+                    data=json.dumps(body),
+                    headers=headers,
+                )
+                print(r.text)
+            else:
+                # 결과 유저에게 전달
 
-                    answer = build_routine_list_answer(message["body"])
-                    print(answer)
-
+                answer = build_routine_list_answer(message["body"])
+                print(answer)
+                print("1st")
+                with app.app_context():
                     emit(
                         "chat",
                         build_chat("agent", answer),
                         broadcast=True,
                         namespace="/",
                     )
-
+        lock.release()
         return
 
     channel.basic_consume(
@@ -188,8 +201,8 @@ def receive_messages():
 
 if __name__ == "__main__":
     # Init Agent
-    agent = Agent(config["name"], config["model"], None, config["sys_msg"])
-    # receiver_thread = threading.Thread(target=receive_messages)
-    # receiver_thread.start()
-    socketio.start_background_task(target=receive_messages)
-    socketio.run(app, debug=False, port=config["port"])
+    receiver_thread = threading.Thread(target=receive_messages)
+    receiver_thread.start()
+    # socketio.start_background_task(target=receive_messages)
+    #socketio.run(app, debug=True, port=config["port"])
+    app.run(debug=True, port=5001)
