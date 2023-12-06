@@ -28,10 +28,10 @@ def scheduled_job():
     # if not routine_heap:
     #     print("No routine to execute")
     #     print()
-    for execution_time, routine_id, routineList in routine_heap:
+    for execution_time, routine_id, routine_list in routine_heap:
         formatted_routine = {
             "routine_id": routine_id,
-            "routineList": routineList,
+            "routine_list": routine_list,
             "execute_time": execution_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
         }
         indented_output = json.dumps(formatted_routine, indent=4)
@@ -47,7 +47,7 @@ def scheduled_job():
 
 # routine 단 건을 message queue 에 보내는 함수
 def send_routine_to_MQ():
-    execution_time, routine_id, routineList = heapq.heappop(routine_heap)
+    execution_time, routine_id, routine_list = heapq.heappop(routine_heap)
 
     execution_time = execution_time.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
@@ -55,7 +55,7 @@ def send_routine_to_MQ():
         "category": "routine",
         "body": {
             "routine_id": routine_id,
-            "routineList": routineList,
+            "routine_list": routine_list,
             "execute_time": execution_time,
         },
     }
@@ -76,8 +76,8 @@ def send_routine_list_to_MQ(routine_list):
 
 
 # Function to add routine to the heap
-def add_routine_to_heap(execution_time, routine_id, routineList):
-    heapq.heappush(routine_heap, (execution_time, routine_id, routineList))
+def add_routine_to_heap(execution_time, routine_id, routine_list):
+    heapq.heappush(routine_heap, (execution_time, routine_id, routine_list))
 
 
 def save_routine(message):
@@ -91,9 +91,9 @@ def save_routine(message):
         db.session.commit()
 
         # schedule 에 루틴 추가
-        add_routine_to_heap(execute_time, routine_instance.id, routine["routineList"])
+        add_routine_to_heap(execute_time, routine_instance.id, routine["routine_list"])
 
-        for device_entry in routine["routineList"]:
+        for device_entry in routine["routine_list"]:
             device = Device(
                 device=device_entry["device"],
                 power=device_entry["power"],

@@ -75,6 +75,10 @@ def receive_messages():
                 routine_service.send_routine_list_to_MQ(routine_list)
 
             elif res_msg["category"] == "modify":
+                # DB에서 루틴 수정
+
+                # 루틴 전달
+
                 pass
 
         return
