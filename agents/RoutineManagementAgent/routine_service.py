@@ -1,8 +1,10 @@
 import heapq
 import json
+from datetime import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from sqlalchemy.orm import joinedload
 
 from agents.RoutineManagementAgent.app import send_message
 from agents.RoutineManagementAgent.models import *
@@ -11,11 +13,30 @@ routine_heap = []
 routine_scheduler = BackgroundScheduler()
 
 
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.strftime("%Y-%m-%dT%H:%M:%S.%f")
+        return super().default(obj)
+
+
 def scheduled_job():
     print("scheduler : Checking routine...")
 
     # routine_heap 을 출력
-    print("routine heap : ", routine_heap)
+    print("===== routine heap =====")
+    # if not routine_heap:
+    #     print("No routine to execute")
+    #     print()
+    for execution_time, routine_id, routineList in routine_heap:
+        formatted_routine = {
+            "routine_id": routine_id,
+            "routineList": routineList,
+            "execute_time": execution_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+        }
+        indented_output = json.dumps(formatted_routine, indent=4)
+        print(indented_output)
+        print()
 
     current_time = datetime.now()
 
@@ -24,7 +45,7 @@ def scheduled_job():
         send_routine_to_MQ()
 
 
-# routine 을 message queue 에 보내는 함수
+# routine 단 건을 message queue 에 보내는 함수
 def send_routine_to_MQ():
     execution_time, routine_id, routineList = heapq.heappop(routine_heap)
 
@@ -33,15 +54,25 @@ def send_routine_to_MQ():
     dict_data = {
         "category": "routine",
         "body": {
-            "id": routine_id,
+            "routine_id": routine_id,
             "routineList": routineList,
             "execute_time": execution_time,
         },
     }
 
-    json_data = json.dumps(dict_data)
+    json_string = json.dumps(dict_data, indent=2)
     # print(json_data)
-    send_message(json_data, "RoutineManagementAgent", "InterfaceAgent")  # mq 에 보내기
+    send_message(json_string, "RoutineManagementAgent", "InterfaceAgent")  # mq 에 보내기
+
+
+# 조회된 routine 리스트를 message queue 에 보내는 함수
+def send_routine_list_to_MQ(routine_list):
+    dict_data = {"category": "routine_list", "body": routine_list}
+
+    # Use the custom encoder when converting to JSON
+    json_string = json.dumps(dict_data, indent=2, cls=CustomEncoder)
+    print(json_string)
+    send_message(json_string, "RoutineManagementAgent", "InterfaceAgent")
 
 
 # Function to add routine to the heap
@@ -80,3 +111,20 @@ routine_scheduler.add_job(
     name="Check Routine",
     replace_existing=True,
 )
+
+
+# Example usage in your service logic
+def read_routines():
+    # Fetch routines with associated devices using join
+    # routines_with_devices = db.session.query(Routine).join(Device).all()
+
+    # n+1 문제 해결
+    routines_with_devices = (
+        db.session.query(Routine).options(joinedload(Routine.devices)).all()
+    )
+
+    # Serialize using Marshmallow schema
+    routine_schema = RoutineSchema(many=True)
+    result = routine_schema.dump(routines_with_devices)
+
+    return result
