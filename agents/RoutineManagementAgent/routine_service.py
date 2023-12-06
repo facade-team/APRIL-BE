@@ -107,7 +107,7 @@ def send_routine_list_to_MQ(routine_list):
 
     # Use the custom encoder when converting to JSON
     json_string = json.dumps(dict_data, indent=2, cls=CustomEncoder)
-    print(json_string)
+    # print(json_string)
     send_message(json_string, "RoutineManagementAgent", "InterfaceAgent")
 
 
