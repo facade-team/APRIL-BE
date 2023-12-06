@@ -23,6 +23,8 @@ from common.config import SMART_HOME_API_BASE, AnalysisAgentConfig
 from common.config import InterfaceAgentConfig as config
 from common.config import RoutineManagementAgentConfig
 
+from util import parse_device_name
+
 app = Flask(__name__)
 socketio = SocketIO(app)
 agent = None
@@ -33,25 +35,8 @@ analysis_agent = AnalysisAgentConfig["name"]
 routine_management_agent = RoutineManagementAgentConfig["name"]
 
 """
-IoT
-"""
-def parse_device_name(target):
-    if target in ["light", "Light", "lamp", "Lamp"]: # light
-        return "light"
-    elif target in ["TV", "tv"]: # TV
-        return "TV"
-    elif target in ["blind", "Blind"]: # blind
-        return "blind"
-    elif target in ["AC", "ac", "Air conditioner", "Air Conditioner", "air conditioner"]: # AC
-        return "AC"
-    else:
-        return ""
-
-"""
 Communicate with User via SocketIO
 """
-
-
 @app.route("/")
 def index():
     return render_template("index.html")  # temp page for socketIO test
@@ -137,20 +122,18 @@ def receive_messages():
     def on_message_received(ch, method, properties, body):
         response = json.loads(body)
         if response["from"] == analysis_agent:  # send message to analysis agent
-            # my_msg = agent.chat(response["message"])
-            # send_message(my_msg, analysis_agent)
             pass
         elif (
             response["from"] == routine_management_agent
         ):  # send message to routine managent agent
-            message = response["message"]
+            message = json.loads(response["message"])
             if message["category"] == "routine":
                 # 루틴 실행
                 routine_list = message["body"]["routineList"]
                 headers = {"Content-Type": "application/json"}
                 body = []
                 for op in routine_list:
-                    dev_name = parse_device_name(parse_device_nameop["device"])
+                    dev_name = parse_device_name(op["device"])
                     if dev_name == "":
                         print("Error! Unsupported Device") # TODO : 예외 처리
                     body.append({
@@ -161,11 +144,16 @@ def receive_messages():
                         }
                     })
                 r = requests.post(
-                    SMART_HOME_API_BASE + "/devices", data=json.dumps(data), headers=headers
+                    SMART_HOME_API_BASE + "/devices", data=json.dumps(body), headers=headers
                 )
                 print(r.text)
             else:
                 # 결과 유저에게 전달
+                answer = build_routine_list_answer(message["body"])
+                print(answer)
+                emit(
+                    "chat", build_chat("agent", answer), broadcast=True, namespace="/"
+                )
                 pass
         return
 

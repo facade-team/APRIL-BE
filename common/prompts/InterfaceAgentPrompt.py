@@ -65,9 +65,10 @@ The requirement should be answered in the form of an object as follows.
 operation object format:
     "power": <one of "on", "off">
 OR
-    "level": <an integer between 0 and 100>
-OR
-    "temp": <a float number>
+    "level": <an integer between 0 and 100. \
+    For device "blind", level represents the percentile of the extent to which the blind was unfolded. \
+    For example, If the blind is fully unfolded, level is 100. If the blind is not unfolded, level is 0. \
+     For device "AC", level represents the temperature.>
 
 General query:
 In the General query, General Query means all queries that do not correspond to the three categories above. \
