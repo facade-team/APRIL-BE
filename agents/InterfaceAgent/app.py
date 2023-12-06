@@ -18,13 +18,15 @@ from common.config import InterfaceAgentConfig as config
 from common.config import AnalysisAgentConfig
 from common.config import RoutineManagementAgentConfig
 
+from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from chat import build_chat, parse_agent_answer
 from datetime import datetime, timedelta
 from common.config import SMART_HOME_API_BASE
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 agent = None
 delimiter = config['delimiter']
 
