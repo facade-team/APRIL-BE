@@ -23,26 +23,28 @@ class CustomEncoder(json.JSONEncoder):
 
 
 def scheduled_job():
-    print("scheduler : Checking routine...")
+    # print("scheduler : Checking routine...")
 
     # thread id 출력
-    print(threading.get_ident())
+    # print(threading.get_ident())
 
     # routine_heap 을 출력
-    print("===== routine heap =====")
+    print("\n")
+    print("[Schedular] ===== routine heap 의 현재 루틴 개수 : ", len(routine_heap), "=====")
+
     # if not routine_heap:
     #     print("No routine to execute")
     #     print()
-    for execute_time, routine_id, routine_list in routine_heap:
-        # formatted_routine = {
-        #     "routine_id": routine_id,
-        #     "routine_list": routine_list,
-        #     "execute_time": execute_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
-        # }
-        # indented_output = json.dumps(formatted_routine, indent=4)
-        # print(indented_output)
-        print(f"routine_id : {routine_id}   execute_time : {execute_time}", end=" ")
-        print()
+    # for execute_time, routine_id, routine_list in routine_heap:
+    # formatted_routine = {
+    #     "routine_id": routine_id,
+    #     "routine_list": routine_list,
+    #     "execute_time": execute_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+    # }
+    # indented_output = json.dumps(formatted_routine, indent=4)
+    # print(indented_output)
+    # print(f"routine_id : {routine_id}   execute_time : {execute_time}", end=" ")
+    # print()
 
     current_time = datetime.now()
 
@@ -140,7 +142,7 @@ def save_routine(message):
 
 routine_scheduler.add_job(
     func=scheduled_job,
-    trigger=IntervalTrigger(seconds=3),
+    trigger=IntervalTrigger(seconds=1.5),
     id="check_routine",
     name="Check Routine",
     replace_existing=True,
@@ -166,8 +168,6 @@ def read_routines():
 
 def update_routine_by_id(routine_id, execute_time):
     # routine_id 에 해당하는 routine 의 execute_time 을 update
-
-    print(111111)
 
     try:
         routine = Routine.query.get(routine_id)
@@ -198,6 +198,7 @@ def read_routine_by_ymd(ymd):
     date_obj = datetime.strptime(ymd, "%Y%m%d")
 
     # Construct the query
+
     routines_on_date = (
         db.session.query(Routine)
         .filter(
@@ -205,6 +206,7 @@ def read_routine_by_ymd(ymd):
             func.extract("month", Routine.routine_time) == date_obj.month,
             func.extract("day", Routine.routine_time) == date_obj.day,
         )
+        .order_by(Routine.routine_time.asc())
         .all()
     )
 
@@ -220,6 +222,7 @@ def read_routine_ymd_list():
     formatted_dates = (
         db.session.query(func.date_format(Routine.routine_time, "%Y%m%d"))
         .distinct()
+        .order_by(Routine.routine_time.asc())
         .all()
     )
 
