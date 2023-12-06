@@ -9,6 +9,16 @@ root_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_file_pa
 sys.path.append(root_directory)
 
 import json
+import requests
+from common import utils
+from agents.agent import Agent
+from common.config import InterfaceAgentConfig as config
+from common.config import AnalysisAgentConfig
+from common.config import RoutineManagementAgentConfig
+
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+from chat import build_chat, parse_agent_answer
 import threading
 from datetime import datetime, timedelta
 
@@ -26,7 +36,8 @@ from common.config import RoutineManagementAgentConfig
 from util import parse_device_name
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 agent = None
 delimiter = config["delimiter"]
 
