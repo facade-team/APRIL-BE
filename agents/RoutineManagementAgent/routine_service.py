@@ -80,3 +80,15 @@ routine_scheduler.add_job(
     name="Check Routine",
     replace_existing=True,
 )
+
+
+# Example usage in your service logic
+def read_routines():
+    # Fetch routines with associated devices using join
+    routines_with_devices = db.session.query(Routine).join(Device).all()
+
+    # Serialize using Marshmallow schema
+    routine_schema = RoutineSchema(many=True)
+    result = routine_schema.dump(routines_with_devices)
+
+    return result

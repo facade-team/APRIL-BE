@@ -63,8 +63,18 @@ def receive_messages():
             routine_service.save_routine(routine_list)
 
         elif response["from"] == interface_agent:  # send message to interface agent
-            my_msg = agent.chat(response["message"])
-            # send_message(my_msg, interface_agent)
+            # 루틴 목록 조회
+
+            res_msg = json.loads(response["message"])
+
+            if res_msg["category"] == "search":
+                # 루틴 목록 조회 쿼리
+                routine_list = routine_service.get_routine_list()
+
+                pass
+            elif res_msg["category"] == "modify":
+                pass
+
         return
 
     channel.basic_consume(

@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from flask_sqlalchemy import SQLAlchemy
+from marshmallow import Schema, fields
 from sqlalchemy import DateTime
 
 db = SQLAlchemy()
@@ -22,3 +23,17 @@ class Device(db.Model):
     device = db.Column(db.String(100), nullable=True)
     power = db.Column(db.String(100), nullable=True)
     level = db.Column(db.Integer, nullable=True)
+
+
+class DeviceSchema(Schema):
+    device = fields.String()
+    power = fields.String()
+    level = fields.Integer()
+
+
+class RoutineSchema(Schema):
+    routine_id = fields.Integer(attribute="id")
+    execute_time = fields.DateTime(
+        attribute="routine_time", format="%Y-%m-%dT%H:%M:%S.%f"
+    )
+    routine_list = fields.Nested(DeviceSchema, attribute="devices", many=True)
