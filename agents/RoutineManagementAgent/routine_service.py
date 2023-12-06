@@ -3,6 +3,7 @@ import json
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from sqlalchemy.orm import joinedload
 
 from agents.RoutineManagementAgent.app import send_message
 from agents.RoutineManagementAgent.models import *
@@ -85,7 +86,12 @@ routine_scheduler.add_job(
 # Example usage in your service logic
 def read_routines():
     # Fetch routines with associated devices using join
-    routines_with_devices = db.session.query(Routine).join(Device).all()
+    # routines_with_devices = db.session.query(Routine).join(Device).all()
+
+    # n+1 문제 해결
+    routines_with_devices = (
+        db.session.query(Routine).options(joinedload(Routine.devices)).all()
+    )
 
     # Serialize using Marshmallow schema
     routine_schema = RoutineSchema(many=True)
