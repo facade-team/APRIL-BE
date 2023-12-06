@@ -22,4 +22,15 @@ def create_routine():
 
     # Return a response
     response = {"message": "Routine created successfully"}
-    return jsonify(response)
+    return response
+
+
+@bp.route("/get-routine", methods=["GET"])
+def get_routine():
+    routine_list = routine_service.read_routines()
+
+    routine_service.send_routine_list_to_MQ(routine_list)
+
+    response = {"message": "Routine send successfully"}
+
+    return response
