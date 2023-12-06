@@ -71,7 +71,9 @@ def receive_messages():
                 # 루틴 목록 조회 쿼리
                 routine_list = routine_service.get_routine_list()
 
-                pass
+                # 루틴 목록 조회 결과 전송
+                routine_service.send_routine_list_to_MQ(routine_list)
+
             elif res_msg["category"] == "modify":
                 pass
 
