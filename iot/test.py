@@ -1,0 +1,36 @@
+import gpio_control as GC
+import time
+
+GC.GPIO_INIT()
+
+GC.GPIO_SET("AC", 1)
+
+# while True :
+#     GC.GPIO_SET("TV", 1)
+#     time.sleep(1)
+#     GC.GPIO_SET("TV", 0)
+#     time.sleep(1)
+#     GC.GPIO_SET("light", 1)
+#     time.sleep(1)
+#     GC.GPIO_SET("light", 0)
+#     time.sleep(1)
+#     GC.GPIO_SET("AC", 1)
+#     time.sleep(1)
+#     GC.GPIO_SET("AC", 2)
+#     time.sleep(1)
+#     GC.GPIO_SET("AC", 3)
+#     time.sleep(1)
+#     GC.GPIO_SET("AC", 4)
+#     time.sleep(1)
+#     GC.GPIO_SET("AC", 0)
+#     time.sleep(1)
+#     GC.GPIO_SET("blind", 1)
+#     time.sleep(1)
+#     GC.GPIO_SET("blind", 2)
+#     time.sleep(1)
+#     GC.GPIO_SET("blind", 3)
+#     time.sleep(1)
+#     GC.GPIO_SET("blind", 4)
+#     time.sleep(1)
+#     GC.GPIO_SET("blind", 0)
+#     time.sleep(1)

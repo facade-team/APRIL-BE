@@ -18,7 +18,7 @@ from flask_cors import CORS
 from agents.agent import Agent
 from agents.RoutineManagementAgent import routine_controller, routine_service
 from agents.RoutineManagementAgent.models import *
-from common import utils
+from common.utils import create_channel, logger, LogType
 from common.config import AnalysisAgentConfig, InterfaceAgentConfig
 from common.config import RoutineManagementAgentConfig as config
 from common.database import DB_URL
@@ -39,13 +39,14 @@ migrate.init_app(app, db)
 
 def send_message(message, msg_from, send_to):
     envelope = {"message": message, "from": msg_from, "to": send_to}
-    channel = utils.create_channel(send_to)
+    logger(LogType.MQ_PUBLISH, envelope)  # log
+    channel = create_channel(send_to)
     channel.basic_publish(exchange="", routing_key=send_to, body=json.dumps(envelope))
 
 
 def receive_messages():
     channel_name = agent.name
-    channel = utils.create_channel(channel_name)
+    channel = create_channel(channel_name)
 
     # other agents
     analysis_agent = AnalysisAgentConfig["name"]
@@ -53,7 +54,8 @@ def receive_messages():
 
     def on_message_received(ch, method, properties, body):
         response = json.loads(body)
-        print("received message : ", response)
+        #print("received message : ", response)
+        logger(LogType.MQ_CONSUME, response)  # log
 
         # TODO: Add business logic
         # Parse response (Who sent? In what format?)

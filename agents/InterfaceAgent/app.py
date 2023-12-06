@@ -20,7 +20,7 @@ from flask_socketio import SocketIO, emit
 from util import build_routine_list_answer, parse_device_name
 
 from agents.agent import Agent
-from common import utils
+from common.utils import create_channel, logger, LogType
 from common.config import SMART_HOME_API_BASE, AnalysisAgentConfig
 from common.config import InterfaceAgentConfig as config
 from common.config import RoutineManagementAgentConfig
@@ -48,16 +48,18 @@ def index():
 @socketio.on("chat")
 def handle_chat_message(message):
     emit("chat", build_chat("user", message), broadcast=True)  # broadcast user message
+    logger(LogType.SOCKET_READ, message) # log
+    logger(LogType.AGENT_REQ, message)  # log
     agent_answer = agent.chat(
         f"{delimiter}{message}{delimiter}"
     )  # ask to interface agent
+    logger(LogType.AGENT_RES, agent_answer)  # log
     parsed_answer = json.loads(agent_answer)
     category, requirements, answer = (
         parsed_answer["category"],
         parsed_answer["requirements"],
         parsed_answer["answer"],
     )
-    print(parsed_answer)
     if category == "Execute IoT Routine":
         routine_number = requirements["routine_number"]
         when_to_execute_in_hours = requirements["when_to_execute_in_hours"]
@@ -109,10 +111,12 @@ def handle_chat_message(message):
             broadcast=True,
             namespace="/",
         )  # broadcast agent message
+        logger(LogType.SOCKET_EMIT, build_chat("agent", "오류가 발생했습니다."))  # log
         return
     emit(
         "chat", build_chat("agent", answer), broadcast=True, namespace="/"
     )  # broadcast agent message
+    logger(LogType.SOCKET_EMIT, build_chat("agent", answer))  # log
     return
 
 
@@ -123,13 +127,14 @@ Communicate with Agents via Message Broker Server
 
 def send_message(message, send_to):
     envelope = {"message": message, "from": agent.name, "to": send_to}
-    channel = utils.create_channel(send_to)
+    logger(LogType.MQ_PUBLISH, envelope)  # log
+    channel = create_channel(send_to)
     channel.basic_publish(exchange="", routing_key=send_to, body=json.dumps(envelope))
 
 
 def receive_messages():
     channel_name = agent.name
-    channel = utils.create_channel(channel_name)
+    channel = create_channel(channel_name)
 
     def on_message_received(ch, method, properties, body):
         with app.app_context():
@@ -140,6 +145,7 @@ def receive_messages():
                 response["from"] == routine_management_agent
             ):  # send message to routine managent agent
                 message = json.loads(response["message"])
+                logger(LogType.MQ_CONSUME, message)  # log
                 if message["category"] == "routine":
                     # 루틴 실행
                     routine_list = message["body"]["routine_list"]
@@ -163,12 +169,12 @@ def receive_messages():
                         data=json.dumps(body),
                         headers=headers,
                     )
-                    print(r.text)
+                    #print(r.text)
                 else:
                     # 결과 유저에게 전달
 
                     answer = build_routine_list_answer(message["body"])
-                    print(answer)
+                    #print(answer)
 
                     emit(
                         "chat",
@@ -176,7 +182,7 @@ def receive_messages():
                         broadcast=True,
                         namespace="/",
                     )
-
+                    logger(LogType.SOCKET_EMIT, build_chat("agent", answer))  # log
         return
 
     channel.basic_consume(
@@ -189,7 +195,5 @@ def receive_messages():
 if __name__ == "__main__":
     # Init Agent
     agent = Agent(config["name"], config["model"], None, config["sys_msg"])
-    # receiver_thread = threading.Thread(target=receive_messages)
-    # receiver_thread.start()
     socketio.start_background_task(target=receive_messages)
     socketio.run(app, debug=False, port=config["port"])
