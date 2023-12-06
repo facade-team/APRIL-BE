@@ -28,4 +28,5 @@ AnalysisAgentConfig = {
 }
 
 # Smart Home IoT API
-SMART_HOME_API_BASE = "http://127.0.0.1:5555"
+# SMART_HOME_API_BASE = "http://172.20.10.8:5555" # production
+SMART_HOME_API_BASE = "http://127.0.0.1:5555" # local
