@@ -112,4 +112,4 @@ if __name__ == "__main__":
 
         routine_service.init_routine_scheduler()
 
-    app.run(debug=True, port=config["port"])
+    app.run(debug=False, port=config["port"])
