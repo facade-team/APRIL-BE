@@ -35,7 +35,7 @@ deviceStatus는 deviceName에 따라 다음과 같은 형식으로 주어집니�
 [
     {{
         'execute_time': '2023-12-22T14:00:00.0002', 
-        'routineList': [
+        'routine_list': [
             {{
                 'deviceName': 'TV',
                 'deviceStatus': ['off']

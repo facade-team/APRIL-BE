@@ -9,28 +9,21 @@ root_directory = os.path.dirname(os.path.dirname(os.path.dirname(current_file_pa
 sys.path.append(root_directory)
 
 import json
-import requests
-from common import utils
-from agents.agent import Agent
-from common.config import InterfaceAgentConfig as config
-from common.config import AnalysisAgentConfig
-from common.config import RoutineManagementAgentConfig
-from common.config import SMART_HOME_API_BASE, AnalysisAgentConfig
-
-from flask_cors import CORS
-from flask_socketio import SocketIO, emit
-from chat import build_chat, parse_agent_answer
 import threading
 from datetime import datetime, timedelta
 
 import requests
+from chat import build_chat, parse_agent_answer
 from flask import Flask, render_template, request
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+from util import build_routine_list_answer, parse_device_name
 
-
-
-
-
-from util import parse_device_name
+from agents.agent import Agent
+from common import utils
+from common.config import SMART_HOME_API_BASE, AnalysisAgentConfig
+from common.config import InterfaceAgentConfig as config
+from common.config import RoutineManagementAgentConfig
 
 app = Flask(__name__)
 CORS(app)
@@ -45,6 +38,8 @@ routine_management_agent = RoutineManagementAgentConfig["name"]
 """
 Communicate with User via SocketIO
 """
+
+
 @app.route("/")
 def index():
     return render_template("index.html")  # temp page for socketIO test
@@ -87,7 +82,7 @@ def handle_chat_message(message):
     elif category == "Operate IoT Devices":
         device = parse_device_name(requirements["device"])
         if device == "":
-            print("Error! Unsupported Device") # TODO : 예외 처리
+            print("Error! Unsupported Device")  # TODO : 예외 처리
         operation = requirements["operation"]
         data = {"type": device, "operation": operation}
         headers = {"Content-Type": "application/json"}
@@ -103,14 +98,18 @@ def handle_chat_message(message):
     else:
         print("Error: Invalid Answer")
         emit(
-            "chat", build_chat("agent", "오류가 발생했습니다."), broadcast=True, namespace="/"
+            "chat",
+            build_chat("agent", "오류가 발생했습니다."),
+            broadcast=True,
+            namespace="/",
         )  # broadcast agent message
         return
     emit(
         "chat", build_chat("agent", answer), broadcast=True, namespace="/"
     )  # broadcast agent message
     return
-    
+
+
 """
 Communicate with Agents via Message Broker Server
 """
@@ -127,41 +126,51 @@ def receive_messages():
     channel = utils.create_channel(channel_name)
 
     def on_message_received(ch, method, properties, body):
-        response = json.loads(body)
-        if response["from"] == analysis_agent:  # send message to analysis agent
-            pass
-        elif (
-            response["from"] == routine_management_agent
-        ):  # send message to routine managent agent
-            message = json.loads(response["message"])
-            if message["category"] == "routine":
-                # 루틴 실행
-                routine_list = message["body"]["routineList"]
-                headers = {"Content-Type": "application/json"}
-                body = []
-                for op in routine_list:
-                    dev_name = parse_device_name(op["device"])
-                    if dev_name == "":
-                        print("Error! Unsupported Device") # TODO : 예외 처리
-                    body.append({
-                        "type": dev_name,
-                        "operation": {
-                            "power": op["power"],
-                            "level": op["level"]
-                        }
-                    })
-                r = requests.post(
-                    SMART_HOME_API_BASE + "/devices", data=json.dumps(body), headers=headers
-                )
-                print(r.text)
-            else:
-                # 결과 유저에게 전달
-                answer = build_routine_list_answer(message["body"])
-                print(answer)
-                emit(
-                    "chat", build_chat("agent", answer), broadcast=True, namespace="/"
-                )
+        with app.app_context():
+            response = json.loads(body)
+            if response["from"] == analysis_agent:  # send message to analysis agent
                 pass
+            elif (
+                response["from"] == routine_management_agent
+            ):  # send message to routine managent agent
+                message = json.loads(response["message"])
+                if message["category"] == "routine":
+                    # 루틴 실행
+                    routine_list = message["body"]["routine_list"]
+                    headers = {"Content-Type": "application/json"}
+                    body = []
+                    for op in routine_list:
+                        dev_name = parse_device_name(op["device"])
+                        if dev_name == "":
+                            print("Error! Unsupported Device")  # TODO : 예외 처리
+                        body.append(
+                            {
+                                "type": dev_name,
+                                "operation": {
+                                    "power": op["power"],
+                                    "level": op["level"],
+                                },
+                            }
+                        )
+                    r = requests.post(
+                        SMART_HOME_API_BASE + "/devices",
+                        data=json.dumps(body),
+                        headers=headers,
+                    )
+                    print(r.text)
+                else:
+                    # 결과 유저에게 전달
+
+                    answer = build_routine_list_answer(message["body"])
+                    print(answer)
+
+                    emit(
+                        "chat",
+                        build_chat("agent", answer),
+                        broadcast=True,
+                        namespace="/",
+                    )
+
         return
 
     channel.basic_consume(
@@ -174,6 +183,7 @@ def receive_messages():
 if __name__ == "__main__":
     # Init Agent
     agent = Agent(config["name"], config["model"], None, config["sys_msg"])
-    receiver_thread = threading.Thread(target=receive_messages)
-    receiver_thread.start()
+    # receiver_thread = threading.Thread(target=receive_messages)
+    # receiver_thread.start()
+    socketio.start_background_task(target=receive_messages)
     socketio.run(app, debug=True, port=config["port"])
