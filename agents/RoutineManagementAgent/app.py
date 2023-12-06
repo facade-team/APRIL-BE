@@ -75,11 +75,13 @@ def receive_messages():
                 routine_service.send_routine_list_to_MQ(routine_list)
 
             elif res_msg["category"] == "modify":
-                # DB에서 루틴 수정
+                # res_msg["body"] => {"routine_id": 1, "execute_time": "2021-06-01T00:00:00.000Z"}
 
-                # 루틴 전달
+                # res_msg["body"] json 형태로 변환
+                body = json.loads(res_msg["body"])
 
-                pass
+                # DB에 루틴 수정 쿼리 날리기
+                routine_service.modify_routine(body["routine_id"], body["execute_time"])
 
         return
 
