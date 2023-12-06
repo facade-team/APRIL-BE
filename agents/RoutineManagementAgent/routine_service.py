@@ -1,5 +1,6 @@
 import heapq
 import json
+import threading
 from datetime import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -23,6 +24,9 @@ class CustomEncoder(json.JSONEncoder):
 
 def scheduled_job():
     print("scheduler : Checking routine...")
+
+    # thread id 출력
+    print(threading.get_ident())
 
     # routine_heap 을 출력
     print("===== routine heap =====")
