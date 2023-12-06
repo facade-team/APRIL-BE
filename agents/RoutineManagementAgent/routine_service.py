@@ -198,6 +198,7 @@ def read_routine_by_ymd(ymd):
     date_obj = datetime.strptime(ymd, "%Y%m%d")
 
     # Construct the query
+
     routines_on_date = (
         db.session.query(Routine)
         .filter(
@@ -205,6 +206,7 @@ def read_routine_by_ymd(ymd):
             func.extract("month", Routine.routine_time) == date_obj.month,
             func.extract("day", Routine.routine_time) == date_obj.day,
         )
+        .order_by(Routine.routine_time.asc())
         .all()
     )
 
@@ -220,6 +222,7 @@ def read_routine_ymd_list():
     formatted_dates = (
         db.session.query(func.date_format(Routine.routine_time, "%Y%m%d"))
         .distinct()
+        .order_by(Routine.routine_time.asc())
         .all()
     )
 

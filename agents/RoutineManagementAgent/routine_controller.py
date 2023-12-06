@@ -49,6 +49,8 @@ def get_routine_by_date():
 # 루틴의 서로 다른 ymd 리스트를 조회
 @bp.route("/get-routine-ymd-list", methods=["GET"])
 def get_routine_ymd_list():
+    # 날짜와 함께 시간도 오름차순으로 정렬
     ymd_list = routine_service.read_routine_ymd_list()
+    # ymd_list = routine_service.read_routine_ymd_list()
 
     return ymd_list
